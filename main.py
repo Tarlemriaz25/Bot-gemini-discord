@@ -2,18 +2,23 @@ import os
 import discord
 from discord.ext import commands
 from google import genai
-from dotenv import load_dotenv
 
-load_dotenv()
+# Lấy thẳng biến từ Render (nếu chạy dưới máy thì mới lấy từ .env)
+discord_token = os.getenv("DISCORD_TOKEN")
+gemini_key = os.getenv("GEMINI_API_KEY")
 
-# Khởi tạo Gemini Client
-gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+# Khởi tạo Client
+gemini_client = genai.Client(api_key=gemini_key)
 
-# Cấu hình Discord Bot Intents
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+# ... (các đoạn code @bot.event bên dưới giữ nguyên) ...
+
+bot.run(discord_token)
+
 
 @bot.event
 async def on_ready():
