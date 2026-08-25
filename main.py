@@ -32,8 +32,7 @@ async def on_message(message):
         if not prompt:
             await message.channel.send("Nhập câu hỏi nữa bro!")
             return
-
-        async with message.channel.typing():
+async with message.channel.typing():
         try:
             # Gọi API Gemini (dùng model chuẩn flash)
             response = gemini_client.models.generate_content(
