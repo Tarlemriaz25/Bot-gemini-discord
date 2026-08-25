@@ -45,12 +45,7 @@ async def on_message(message):
                 if len(reply) > 2000:
                     for i in range(0, len(reply), 1900):
                         await message.reply(reply[i:i+1900])
-                else:
-                    await message.reply(reply)
-                    
-            except Exception as e:
-                await message.channel.send(f"Lỗi rồi bro: {e}")
-
+                
     # Xử lý các lệnh khác nếu có
     await bot.process_commands(message)
 
