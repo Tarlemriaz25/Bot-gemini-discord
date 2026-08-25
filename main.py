@@ -34,20 +34,23 @@ async def on_message(message):
             return
 
         async with message.channel.typing():
-            try:
-                # Gọi API Gemini (dùng model chuẩn 3.5-flash-lite)
-                response = gemini_client.models.generate_content(
-                    model='gemini-3.6-flash',
-                    contents=prompt
-                )
-                
-                reply = response.text
-                if len(reply) > 2000:
-                    for i in range(0, len(reply), 1900):
-                        await message.reply(reply[i:i+1900])
-                
-    # Xử lý các lệnh khác nếu có
-    await bot.process_commands(message)
+        try:
+            # Gọi API Gemini (dùng model chuẩn flash)
+            response = gemini_client.models.generate_content(
+                model='gemini-3.6-flash',
+                contents=prompt
+            )
 
+            reply = response.text
+            if len(reply) > 2000:
+                for i in range(0, len(reply), 1900):
+                    await message.reply(reply[i:i+1900])
+            else:
+                await message.reply(reply)
+
+        except Exception as e:
+            await message.channel.send(f"Lỗi rồi bro: {e}")
+
+    await bot.process_commands(message)
 # 4. CHỈ CHẠY BOT Ở DÒNG CUỐI CÙNG NÀY
 bot.run(discord_token)
