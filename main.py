@@ -37,7 +37,7 @@ async def on_message(message):
             try:
                 # Gọi API Gemini (dùng model chuẩn 3.5-flash-lite)
                 response = gemini_client.models.generate_content(
-                    model='gemini-3.5-flash-Lite',
+                    model='gemini-3.6-flash',
                     contents=prompt
                 )
                 
