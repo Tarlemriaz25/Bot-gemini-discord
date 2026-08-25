@@ -35,9 +35,9 @@ async def on_message(message):
 
         async with message.channel.typing():
             try:
-                # Gọi API Gemini (dùng model chuẩn 2.5-flash)
+                # Gọi API Gemini (dùng model chuẩn 3.5-flash-lite)
                 response = gemini_client.models.generate_content(
-                    model='gemini-3.6-flash',
+                    model='gemini-3.5-flash-Lite',
                     contents=prompt
                 )
                 
