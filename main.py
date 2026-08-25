@@ -24,11 +24,13 @@ bot.run(discord_token)
 async def on_ready():
     print(f'Bot da online voi ten: {bot.user}')
 
+# Đảm bảo có dòng xử lý lệnh này trong event on_message
 @bot.event
 async def on_message(message):
-    # Bỏ qua tin nhắn do chính Bot gửi
     if message.author == bot.user:
-        return
+        return  # Bỏ qua tin nhắn của chính bot
+    
+    await bot.process_commands(message) # BẮT BUỘC PHẢI CÓ dòng này để bot nhận lệnh !
 
     # Chỉ phản hồi khi Bot được tag tên hoặc tin nhắn bắt đầu bằng lệnh !ask
     if bot.user.mentioned_in(message) or message.content.startswith('!ask'):
