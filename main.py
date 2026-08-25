@@ -1,7 +1,25 @@
 import os
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import discord
 from discord.ext import commands
 from google import genai
+
+# --- MỞ PORT GIẢ ĐỂ LỪA RENDER (GIÚP BOT KHÔNG BỊ KILL) ---
+class DummyHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot Discord dang chay ngon lanh!")
+
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(('0.0.0.0', port), DummyHandler)
+    server.serve_forever()
+
+# Chạy server giả ở luồng phụ
+threading.Thread(target=run_dummy_server, daemon=True).start()
+# --------------------------------------------------------
 
 # 1. Khởi tạo Token và Client
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -21,11 +39,9 @@ async def on_ready():
 # 3. Lắng nghe tin nhắn
 @bot.event
 async def on_message(message):
-    # Không tự trả lời tin nhắn của chính bot
     if message.author == bot.user:
         return
 
-    # Chỉ phản hồi khi được Tag tên bot hoặc dùng lệnh !ask
     if bot.user.mentioned_in(message) or message.content.startswith('!ask'):
         prompt = message.content.replace(f'<@{bot.user.id}>', '').replace('!ask', '').strip()
 
@@ -35,15 +51,13 @@ async def on_message(message):
 
         async with message.channel.typing():
             try:
-                # Gọi API Gemini (Dùng model chuẩn gemini-2.0-flash)
                 response = gemini_client.models.generate_content(
-                    model='gemini-3.6-flash',
+                    model='gemini-2.0-flash',
                     contents=prompt
                 )
 
                 reply = response.text
 
-                # Cắt nhỏ tin nhắn nếu dài hơn 2000 ký tự (giới hạn của Discord)
                 if len(reply) > 2000:
                     for i in range(0, len(reply), 1900):
                         await message.reply(reply[i:i+1900])
@@ -53,7 +67,6 @@ async def on_message(message):
             except Exception as e:
                 await message.channel.send(f"Lỗi rồi bro: {e}")
 
-    # Đảm bảo vẫn xử lý các lệnh khác nếu có
     await bot.process_commands(message)
 
 # 4. Chạy Bot
