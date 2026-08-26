@@ -48,7 +48,7 @@ async def on_ready():
 @app_commands.choices(selected_model=[
     app_commands.Choice(name="Gemini 3.6 Flash (Nhanh & Chuẩn - Mặc định)", value="gemini-3.6-flash"),
     app_commands.Choice(name="Gemini 3.5 Flash-Lite (Ổn định nhanh nhất)", value="gemini-3.5-flash-lite"),
-    app_commands.Choice(name="Gemini 3.1 Pro (Thông minh hơn, chậm hơn)", value="gemini-3.1-pro"),
+    app_commands.Choice(name="Gemini 3.7 Flash (Thông minh và mới)", value="gemini-3.7-flash"),
 ])
 async def set_model(interaction: discord.Interaction, selected_model: app_commands.Choice[str]):
     user_models[interaction.user.id] = selected_model.value
