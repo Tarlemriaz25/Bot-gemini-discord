@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.ext import commands
 from google import genai
 
-# --- 1. MỞ PORT GIẢ CHO RENDER ---
+# --- 1. MỞ PORT GIẢ LỪA RENDER (GIÚP BOT KHÔNG BỊ KILL) ---
 class DummyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -20,49 +20,77 @@ def run_dummy_server():
 
 threading.Thread(target=run_dummy_server, daemon=True).start()
 
-# --- 2. KHỞI TẠO BOT & GEMINI ---
+# --- 2. KHỞI TẠO BOT & LẤY CÁC BIẾN MÔI TRƯỜNG ---
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+# Lấy 2 API Keys riêng biệt từ Environment Variables của Render
+API_KEYS = []
+key1 = os.getenv("GEMINI_API_KEY_1")
+key2 = os.getenv("GEMINI_API_KEY_2")
+
+if key1: API_KEYS.append(key1.strip())
+if key2: API_KEYS.append(key2.strip())
+
+# Backup: Nếu bro vẫn dùng tên biến cũ GEMINI_API_KEY
+if not API_KEYS:
+    old_key = os.getenv("GEMINI_API_KEY")
+    if old_key: API_KEYS.append(old_key.strip())
 
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Bộ nhớ lưu model được chọn của từng User (Mặc định là gemini-2.0-flash)
+# Lưu model được chọn cho từng người dùng
 user_models = {}
+
+# --- 3. HÀM GỌI API GEMINI (TỰ ĐỘNG CHUYỂN KEY NẾU LỖI) ---
+def generate_content_with_fallback(prompt, model_name):
+    last_exception = None
+    
+    for idx, key in enumerate(API_KEYS):
+        try:
+            client = genai.Client(api_key=key)
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt
+            )
+            return response.text
+        except Exception as e:
+            print(f"⚠️ Key số {idx+1} gặp lỗi: {e}. Đang chuyển sang Key tiếp theo...")
+            last_exception = e
+            
+    raise last_exception
 
 @bot.event
 async def on_ready():
-    # Sync các Slash Command (dấu /) với Discord
     try:
         synced = await bot.tree.sync()
-        print(f"Đã sync {len(synced)} lệnh slash command!")
+        print(f"✅ Đã sync {len(synced)} lệnh slash command!")
     except Exception as e:
-        print(f"Lỗi sync command: {e}")
-    print(f"Bot đã online: {bot.user}")
+        print(f"⚠️ Lỗi sync command: {e}")
+    print(f"🚀 Bot đã online với tên: {bot.user} | Nạp thành công {len(API_KEYS)} API Key(s)")
 
-# --- 3. SLASH COMMAND: /model ---
+# --- 4. SLASH COMMAND: /model ---
 @bot.tree.command(name="model", description="Chọn model Gemini bro muốn dùng")
 @app_commands.choices(selected_model=[
     app_commands.Choice(name="Gemini 3.6 Flash (Nhanh & Chuẩn - Mặc định)", value="gemini-3.6-flash"),
-    app_commands.Choice(name="Gemini 3.5 Flash-Lite (Ổn định nhanh nhất)", value="gemini-3.5-flash-lite"),
-    app_commands.Choice(name="Gemini 3.7 Flash (Thông minh và mới)", value="gemini-3.7-flash"),
+    app_commands.Choice(name="Gemini 3.5 Flash-Lite (Ổn định nhanh)", value="gemini-3.5-flash-lite"),
+    app_commands.Choice(name="Gemini 3.7 Flash (Thông minh hơn)", value="gemini-3.7-flash"),
 ])
 async def set_model(interaction: discord.Interaction, selected_model: app_commands.Choice[str]):
     user_models[interaction.user.id] = selected_model.value
     await interaction.response.send_message(
         f"✅ Đã đổi model cho bro **{interaction.user.name}** thành: `{selected_model.value}`!",
-        ephemeral=True # Chỉ người bấm lệnh mới thấy tin nhắn này
+        ephemeral=True
     )
 
-# --- 4. XỬ LÝ TIN NHẮN CHAT ---
+# --- 5. XỬ LÝ TIN NHẮN CHAT ---
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
 
+    # Trả lời khi tag bot hoặc gõ !ask
     if bot.user.mentioned_in(message) or message.content.startswith('!ask'):
         prompt = message.content.replace(f'<@{bot.user.id}>', '').replace('!ask', '').strip()
 
@@ -70,18 +98,13 @@ async def on_message(message):
             await message.channel.send("Nhập câu hỏi nữa bro!")
             return
 
-        # Lấy model user đã chọn, nếu chưa chọn thì lấy mặc định 2.0-flash
         current_model = user_models.get(message.author.id, "gemini-2.0-flash")
 
         async with message.channel.typing():
             try:
-                response = gemini_client.models.generate_content(
-                    model=current_model,
-                    contents=prompt
-                )
+                reply = generate_content_with_fallback(prompt, current_model)
 
-                reply = response.text
-
+                # Chia nhỏ tin nhắn nếu dài hơn giới hạn 2000 ký tự của Discord
                 if len(reply) > 2000:
                     for i in range(0, len(reply), 1900):
                         await message.reply(reply[i:i+1900])
@@ -89,8 +112,9 @@ async def on_message(message):
                     await message.reply(reply)
 
             except Exception as e:
-                await message.channel.send(f"Lỗi rồi bro ({current_model}): {e}")
+                await message.channel.send(f"❌ Tất cả API Key đều bị lỗi hoặc hết quota bro ơi: {e}")
 
     await bot.process_commands(message)
 
+# --- 6. CHẠY BOT ---
 bot.run(DISCORD_TOKEN)
