@@ -56,6 +56,38 @@ async def set_model(interaction: discord.Interaction, selected_model: app_comman
         f"✅ Đã đổi model cho bro **{interaction.user.name}** thành: `{selected_model.value}`!",
         ephemeral=True # Chỉ người bấm lệnh mới thấy tin nhắn này
     )
+# --- HÀM GỌI API GEMINI VỚI SYSTEM PROMPT GIÚP BOT THÔNG MINH HƠN ---
+def generate_content_with_fallback(prompt, model_name):
+    last_exception = None
+    
+    # SYSTEM INSTRUCTION: "Thổi hồn" và tăng trí thông minh cho Bot ở đây!
+    system_instruction = (
+        "Bạn là một trợ lý AI cá nhân thông minh, am hiểu sâu sắc về công nghệ, phần cứng, lập trình, "
+        "và hệ thống Android/Linux. Hãy luôn suy luận cẩn thận, chi tiết, cung cấp giải pháp chính xác "
+        "và hữu ích nhất. Trả lời bằng tiếng Việt thân thiện, tự nhiên, trình bày đẹp mắt bằng Markdown "
+        "(dùng bullet points, codeblock khi cần)."
+    )
+    
+    for idx, key in enumerate(API_KEYS):
+        try:
+            client = genai.Client(api_key=key)
+            
+            # Cấu hình nạp System Instruction & nâng cao tư duy cho Model
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=genai.types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    temperature=0.7 # Giúp câu trả lời sáng tạo và tự nhiên hơn
+                )
+            )
+            return response.text
+        except Exception as e:
+            print(f"⚠️ Key số {idx+1} gặp lỗi: {e}. Đang chuyển sang Key tiếp theo...")
+            last_exception = e
+            
+    raise last_exception
+
 
 # --- 4. XỬ LÝ TIN NHẮN CHAT ---
 @bot.event
