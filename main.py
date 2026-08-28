@@ -91,9 +91,9 @@ async def on_ready():
 # --- 5. SLASH COMMAND: /model ---
 @bot.tree.command(name="model", description="Chọn model Gemini bro muốn dùng")
 @app_commands.choices(selected_model=[
-    app_commands.Choice(name="Gemini 2.0 Flash (Nhanh & Chuẩn - Mặc định)", value="gemini-2.0-flash"),
-    app_commands.Choice(name="Gemini 1.5 Flash (Ổn định)", value="gemini-1.5-flash"),
-    app_commands.Choice(name="Gemini 1.5 Pro (Thông minh hơn)", value="gemini-1.5-pro"),
+    app_commands.Choice(name="Gemini 3.6 Flash (Nhanh & Chuẩn - Mặc định)", value="gemini-3.6-flash"),
+    app_commands.Choice(name="Gemini 3.5 Flash-Lite (Ổn định)", value="gemini-3.5-flash-lite"),
+    app_commands.Choice(name="Gemini 3.7 Flash (Thông minh hơn)", value="gemini-3.7-flash"),
 ])
 async def set_model(interaction: discord.Interaction, selected_model: app_commands.Choice[str]):
     user_models[interaction.user.id] = selected_model.value
@@ -116,7 +116,7 @@ async def on_message(message):
             await message.channel.send("Nhập câu hỏi nữa bro!")
             return
 
-        current_model = user_models.get(message.author.id, "gemini-2.0-flash")
+        current_model = user_models.get(message.author.id, "gemini-3.6-flash")
 
         async with message.channel.typing():
             try:
