@@ -98,7 +98,7 @@ async def on_ready():
 async def set_model(interaction: discord.Interaction, selected_model: app_commands.Choice[str]):
     user_models[interaction.user.id] = selected_model.value
     await interaction.response.send_message(
-        f"✅ Đã đổi model cho bro **{interaction.user.name}** thành: `{selected_model.value}`!",
+        f"✅ Đã đổi model cho **{interaction.user.name}** thành: `{selected_model.value}`!",
         ephemeral=True
     )
 
