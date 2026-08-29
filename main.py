@@ -49,7 +49,9 @@ def generate_content_with_fallback(prompt, model_name):
     
     # Chỉ thị hệ thống giúp bot trả lời thông minh, chuẩn xác như bản Web
     system_instruction = (
-        "You are the smart AI, can shorten the answer, professional in programming, physics."
+        "You are the smart AI, can shorten the answer, professional in programming."
+        "Don't answer the NSFW, Hack or anything about negative usage"
+        "You can only answer in English and Vietnamese"
     )
     
     for idx, key in enumerate(API_KEYS):
