@@ -76,7 +76,7 @@ def generate_content_with_fallback(prompt, model_name):
 @bot.event
 async def on_ready():
     # Cài đặt Custom Status (Dòng chữ cảm nghĩ dưới avatar)
-    custom_status = discord.CustomActivity(name="Chat with me by !ask ✨")
+    custom_status = discord.CustomActivity(name="I'm going to dead by server limit. Sorry for this✨")
     await bot.change_presence(activity=custom_status)
 
     try:
