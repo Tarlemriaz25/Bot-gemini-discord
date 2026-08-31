@@ -46,8 +46,7 @@ def generate_content_with_fallback(prompt, model_name):
     last_exception = None
     system_instruction = (
         "Bạn là một trợ lý AI cá nhân thông minh, am hiểu sâu sắc về công nghệ, phần cứng, lập trình, "
-        "và hệ thống Android/Linux. Hãy luôn suy luận cẩn thận, chi tiết, cung cấp giải pháp chính xác "
-        "và hữu ích nhất. Trả lời bằng tiếng Việt thân thiện, tự nhiên, trình bày đẹp mắt bằng Markdown."
+        "và hữu ích nhất. Trả lời bằng tiếng Việt hoặc tiếng Anh thân thiện, tự nhiên, trình bày đẹp mắt bằng Markdown."
     )
     
     for idx, key in enumerate(API_KEYS):
