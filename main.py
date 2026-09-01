@@ -91,7 +91,7 @@ async def on_ready():
 # --- 5. SLASH COMMANDS QUẢN LÝ (CHỈ CHO BRO & CHỦ SERVER) ---
 
 # 👞 Lệnh Kick
-@bot.tree.command(name="kick", description="Kick thành viên (Chỉ Bro & Chủ Server dùng được)")
+@bot.tree.command(name="kick", description="Kick thành viên (Chỉ Admin Bot & Chủ Server dùng được)")
 async def kick(interaction: discord.Interaction, member: discord.Member, reason: str = "Không có lý do"):
     if not is_owner_or_creator(interaction):
         await interaction.response.send_message("❌ Lệnh này chỉ dành riêng cho **Chủ Server** và **Admin Bot**!", ephemeral=True)
@@ -104,7 +104,7 @@ async def kick(interaction: discord.Interaction, member: discord.Member, reason:
         await interaction.response.send_message("❌ Bot không đủ quyền để kick người này (Role của họ cao hơn Bot)!", ephemeral=True)
 
 # ⛔ Lệnh Ban
-@bot.tree.command(name="ban", description="Ban thành viên (Chỉ Bro & Chủ Server dùng được)")
+@bot.tree.command(name="ban", description="Ban thành viên (Chỉ Admin Bot & Chủ Server dùng được)")
 async def ban(interaction: discord.Interaction, member: discord.Member, reason: str = "Không có lý do"):
     if not is_owner_or_creator(interaction):
         await interaction.response.send_message("❌ Lệnh này chỉ dành riêng cho **Chủ Server** và **Admin Bot**!", ephemeral=True)
@@ -117,7 +117,7 @@ async def ban(interaction: discord.Interaction, member: discord.Member, reason: 
         await interaction.response.send_message("❌ Bot không đủ quyền để ban người này!", ephemeral=True)
 
 # 🔇 Lệnh Timeout
-@bot.tree.command(name="timeout", description="Mute thành viên (Chỉ Bro & Chủ Server dùng được)")
+@bot.tree.command(name="timeout", description="Mute thành viên (Chỉ Admin Bot & Chủ Server dùng được)")
 async def timeout(interaction: discord.Interaction, member: discord.Member, minutes: int, reason: str = "Không có lý do"):
     if not is_owner_or_creator(interaction):
         await interaction.response.send_message("❌ Lệnh này chỉ dành riêng cho **Chủ Server** và **Admin Bot**!", ephemeral=True)
