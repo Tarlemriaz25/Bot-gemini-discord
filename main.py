@@ -79,7 +79,7 @@ def generate_content_with_fallback(prompt, model_name):
 # --- 4. SỰ KIỆN BOT ONLINE ---
 @bot.event
 async def on_ready():
-    custom_status = discord.CustomActivity(name="Quản lý Server & Trả lời AI ✨")
+    custom_status = discord.CustomActivity(name="Manage Server & AI chatbot ✨")
     await bot.change_presence(activity=custom_status)
     try:
         synced = await bot.tree.sync()
