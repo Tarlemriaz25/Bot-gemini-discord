@@ -53,9 +53,9 @@ def is_owner_or_creator(interaction: discord.Interaction) -> bool:
 def generate_content_with_fallback(prompt, model_name):
     last_exception = None
     system_instruction = (
-        "Bạn là một trợ lý AI cá nhân thông minh, am hiểu sâu sắc về công nghệ, phần cứng, lập trình, "
+        "Bạn là một trợ lý AI cá nhân thông minh, am hiểu sâu sắc về công nghệ, khoa học, toán học, luận văn và vũ trụ "
         "Hãy luôn suy luận cẩn thận, chi tiết, cung cấp giải pháp chính xác "
-        "và hữu ích nhất. Trả lời bằng tiếng Việt hoặc tiếng Anh thân thiện, tự nhiên, trình bày đẹp mắt bằng Markdown."
+        "và hữu ích nhất. Trả lời bằng tiếng Việt hoặc tiếng Anh thân thiện, tự nhiên, ngắn gọn, trình bày đẹp mắt bằng Markdown."
     )
     
     for idx, key in enumerate(API_KEYS):
