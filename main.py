@@ -25,7 +25,7 @@ threading.Thread(target=run_dummy_server, daemon=True).start()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 # 🆔 ĐIỀN ID DISCORD CỦA BRO VÀO ĐÂY (Thay dãy số bên dưới bằng ID thật)
-MY_DISCORD_ID = 123456789012345678  
+MY_DISCORD_ID = 1352867812552736822
 
 API_KEYS = []
 key1 = os.getenv("GEMINI_API_KEY_1")
