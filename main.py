@@ -1,18 +1,18 @@
 import os
-import json
 import threading
+from datetime import timedelta
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import discord
 from discord import app_commands
 from discord.ext import commands
 from google import genai
 
-# --- 1. SERVER GIẢ CHO RENDER ---
+# --- 1. SERVER GIẢ CHO RENDER (GIÚP BOT KHÔNG BỊ SLEEP) ---
 class DummyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Bot is alive!")
+        self.wfile.write(b"Bot Admin & AI is alive!")
 
 def run_dummy_server():
     port = int(os.environ.get("PORT", 8080))
@@ -21,51 +21,11 @@ def run_dummy_server():
 
 threading.Thread(target=run_dummy_server, daemon=True).start()
 
-# --- 2. QUẢN LÝ DỮ LIỆU XU (LƯU VÀO FILE JSON) ---
-COINS_FILE = "coins.json"
-DEFAULT_COINS = 5  # Số xu tặng cho người mới lần đầu dùng bot
-
-def load_coins():
-    if os.path.exists(COINS_FILE):
-        try:
-            with open(COINS_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
-
-def save_coins(data):
-    with open(COINS_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4)
-
-def get_user_coins(user_id):
-    coins_data = load_coins()
-    str_id = str(user_id)
-    if str_id not in coins_data:
-        coins_data[str_id] = DEFAULT_COINS
-        save_coins(coins_data)
-    return coins_data[str_id]
-
-def use_user_coin(user_id):
-    coins_data = load_coins()
-    str_id = str(user_id)
-    current = coins_data.get(str_id, DEFAULT_COINS)
-    if current > 0:
-        coins_data[str_id] = current - 1
-        save_coins(coins_data)
-        return True, coins_data[str_id]
-    return False, 0
-
-def add_user_coins(user_id, amount):
-    coins_data = load_coins()
-    str_id = str(user_id)
-    current = coins_data.get(str_id, DEFAULT_COINS)
-    coins_data[str_id] = current + amount
-    save_coins(coins_data)
-    return coins_data[str_id]
-
-# --- 3. KHỞI TẠO BOT & API KEYS ---
+# --- 2. KHỞI TẠO BOT & CẤU HÌNH BIẾN MÔI TRƯỜNG ---
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+
+# 🆔 ĐIỀN ID DISCORD CỦA BRO VÀO ĐÂY (Thay dãy số bên dưới bằng ID thật)
+MY_DISCORD_ID = 123456789012345678  
 
 API_KEYS = []
 key1 = os.getenv("GEMINI_API_KEY_1")
@@ -79,11 +39,16 @@ if not API_KEYS:
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
+intents.members = True  # Bắt buộc để đọc thông tin và quản lý thành viên
 
+bot = commands.Bot(command_prefix="!", intents=intents)
 user_models = {}
 
-# --- 4. HÀM GỌI GEMINI API ---
+# Hàm kiểm tra: Chỉ Bro hoặc Chủ Server mới được xài lệnh Admin
+def is_owner_or_creator(interaction: discord.Interaction) -> bool:
+    return interaction.user.id == interaction.guild.owner_id or interaction.user.id == MY_DISCORD_ID
+
+# --- 3. HÀM GỌI GEMINI API VỚI SYSTEM INSTRUCTION ---
 def generate_content_with_fallback(prompt, model_name):
     last_exception = None
     system_instruction = (
@@ -110,10 +75,10 @@ def generate_content_with_fallback(prompt, model_name):
             
     raise last_exception
 
-# --- 5. SỰ KIỆN BOT ONLINE ---
+# --- 4. SỰ KIỆN BOT ONLINE ---
 @bot.event
 async def on_ready():
-    custom_status = discord.CustomActivity(name="Chat với tớ bằng !ask nhé ✨")
+    custom_status = discord.CustomActivity(name="Quản lý Server & Trả lời AI ✨")
     await bot.change_presence(activity=custom_status)
     try:
         synced = await bot.tree.sync()
@@ -122,24 +87,55 @@ async def on_ready():
         print(f"⚠️ Lỗi sync command: {e}")
     print(f"🚀 Bot đã online với tên: {bot.user}")
 
-# --- 6. SLASH COMMANDS (XU & MODEL) ---
-@bot.tree.command(name="coins", description="Kiểm tra số xu còn lại của bro")
-async def check_coins(interaction: discord.Interaction):
-    coins = get_user_coins(interaction.user.id)
-    await interaction.response.send_message(
-        f"🪙 Bro **{interaction.user.name}** hiện đang có: **{coins} xu**.",
-        ephemeral=True
-    )
+# --- 5. SLASH COMMANDS QUẢN LÝ (CHỈ BRO & CHỦ SERVER DÙNG ĐƯỢC) ---
 
-@bot.tree.command(name="daily", description="Điểm danh nhận xu mỗi ngày (Tặng 3 xu)")
-async def daily_coins(interaction: discord.Interaction):
-    # Cộng thêm 3 xu
-    new_total = add_user_coins(interaction.user.id, 3)
-    await interaction.response.send_message(
-        f"🎉 Bro đã nhận được 3 xu điểm danh! Tổng số xu hiện tại: **{new_total} xu**.",
-        ephemeral=True
-    )
+# 👞 Lệnh Kick
+@bot.tree.command(name="kick", description="Kick thành viên khỏi Server (Chỉ Bro & Chủ Server)")
+async def kick(interaction: discord.Interaction, member: discord.Member, reason: str = "Không có lý do"):
+    if not is_owner_or_creator(interaction):
+        await interaction.response.send_message("❌ Lệnh này chỉ dành riêng cho **Chủ Server** và **Admin Bot**!", ephemeral=True)
+        return
 
+    try:
+        await member.kick(reason=reason)
+        await interaction.response.send_message(f"👞 Đã kick **{member.name}**! Lý do: `{reason}`")
+    except discord.Forbidden:
+        await interaction.response.send_message("❌ Bot không đủ quyền để kick người này (Role của họ cao hơn Bot)!", ephemeral=True)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Lỗi: {e}", ephemeral=True)
+
+# 🔨 Lệnh Ban
+@bot.tree.command(name="ban", description="Ban vĩnh viễn thành viên (Chỉ Bro & Chủ Server)")
+async def ban(interaction: discord.Interaction, member: discord.Member, reason: str = "Không có lý do"):
+    if not is_owner_or_creator(interaction):
+        await interaction.response.send_message("❌ Lệnh này chỉ dành riêng cho **Chủ Server** và **Admin Bot**!", ephemeral=True)
+        return
+
+    try:
+        await member.ban(reason=reason)
+        await interaction.response.send_message(f"🔨 Đã BAN vĩnh viễn **{member.name}**! Lý do: `{reason}`")
+    except discord.Forbidden:
+        await interaction.response.send_message("❌ Bot không đủ quyền để ban người này!", ephemeral=True)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Lỗi: {e}", ephemeral=True)
+
+# 🔇 Lệnh Timeout (Khóa Mõm)
+@bot.tree.command(name="timeout", description="Timeout/Mute thành viên (Chỉ Bro & Chủ Server)")
+async def timeout(interaction: discord.Interaction, member: discord.Member, minutes: int, reason: str = "Không có lý do"):
+    if not is_owner_or_creator(interaction):
+        await interaction.response.send_message("❌ Lệnh này chỉ dành riêng cho **Chủ Server** và **Admin Bot**!", ephemeral=True)
+        return
+
+    try:
+        duration = timedelta(minutes=minutes)
+        await member.timeout(duration, reason=reason)
+        await interaction.response.send_message(f"🔇 Đã timeout **{member.name}** trong `{minutes}` phút! Lý do: `{reason}`")
+    except discord.Forbidden:
+        await interaction.response.send_message("❌ Bot không đủ quyền để timeout người này!", ephemeral=True)
+    except Exception as e:
+        await interaction.response.send_message(f"❌ Lỗi: {e}", ephemeral=True)
+
+# --- 6. SLASH COMMAND CHỌN MODEL AI ---
 @bot.tree.command(name="model", description="Chọn model Gemini bro muốn dùng")
 @app_commands.choices(selected_model=[
     app_commands.Choice(name="Gemini 2.0 Flash (Nhanh & Chuẩn - Mặc định)", value="gemini-2.0-flash"),
@@ -153,7 +149,7 @@ async def set_model(interaction: discord.Interaction, selected_model: app_comman
         ephemeral=True
     )
 
-# --- 7. XỬ LÝ TIN NHẮN (KIỂM TRÁ VÀ TRỪ XU) ---
+# --- 7. XỬ LÝ TIN NHẮN CHAT VỚI AI ---
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
@@ -166,34 +162,20 @@ async def on_message(message):
             await message.channel.send("Nhập câu hỏi nữa bro!")
             return
 
-        # KIỂM TRÃ VÀ TRỪ XU
-        success, remaining_coins = use_user_coin(message.author.id)
-        if not success:
-            await message.reply(
-                "❌ **Bro đã hết xu mất rồi!**\n"
-                "Dùng lệnh `/daily` để nhận xu miễn phí mỗi ngày hoặc nhờ admin cộng thêm nhé!"
-            )
-            return
-
         current_model = user_models.get(message.author.id, "gemini-2.0-flash")
 
         async with message.channel.typing():
             try:
                 reply = generate_content_with_fallback(prompt, current_model)
-                
-                # Báo số xu còn lại ở cuối
-                reply_text = f"{reply}\n\n*(🪙 Còn lại: {remaining_coins} xu)*"
 
-                if len(reply_text) > 2000:
-                    for i in range(0, len(reply_text), 1900):
-                        await message.reply(reply_text[i:i+1900])
+                if len(reply) > 2000:
+                    for i in range(0, len(reply), 1900):
+                        await message.reply(reply[i:i+1900])
                 else:
-                    await message.reply(reply_text)
+                    await message.reply(reply)
 
             except Exception as e:
-                # Nếu API bị lỗi thì hoàn lại 1 xu cho user
-                add_user_coins(message.author.id, 1)
-                await message.channel.send(f"❌ Lỗi API nên đã hoàn lại 1 xu cho bro: {e}")
+                await message.channel.send(f"❌ Lỗi API Gemini rồi bro ơi: {e}")
 
     await bot.process_commands(message)
 
