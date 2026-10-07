@@ -7,12 +7,12 @@ from discord.ext import commands
 from google import genai
 from openai import OpenAI
 
-# --- 1. SERVER GIẢ CHO RENDER ---
+# --- 1. SERVER GIẢ CHO RENDER (GIÚP BOT KHÔNG BỊ SLEEP) ---
 class DummyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Bot AI is running!")
+        self.wfile.write(b"Bot Multi-AI (Gemini & OpenRouter) is running!")
 
 def run_dummy_server():
     port = int(os.environ.get("PORT", 8080))
@@ -21,9 +21,9 @@ def run_dummy_server():
 
 threading.Thread(target=run_dummy_server, daemon=True).start()
 
-# --- 2. KHỞI TẠO BOT & LẤY KEYS ---
+# --- 2. KHỞI TẠO BOT & LẤY CÁC BIẾN MÔI TRƯỜNG ---
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-OPENAI_KEY = os.getenv("OPENAI_API_KEY")
+OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
 
 GEMINI_KEYS = []
 g_key1 = os.getenv("GEMINI_API_KEY_1")
@@ -48,7 +48,7 @@ SYSTEM_PROMPT = (
 
 # --- 3. HÀM ĐIỀU HƯỚNG GỌI AI ---
 def ask_ai(prompt, model_name):
-    # Nhóm Gemini
+    # Nhóm Gọi Trực Tiếp Qua Gemini SDK (Miễn phí từ Google AI Studio)
     if model_name.startswith("gemini"):
         last_exception = None
         for key in GEMINI_KEYS:
@@ -65,14 +65,17 @@ def ask_ai(prompt, model_name):
                 return res.text
             except Exception as e:
                 last_exception = e
-        raise last_exception or Exception("Không có Gemini API Key hợp lệ.")
+        raise last_exception or Exception("Không có Gemini API Key hợp lệ!")
 
-    # Nhóm ChatGPT (OpenAI)
+    # Nhóm Gọi Qua OpenRouter SDK (Sử dụng các model có đuôi :free)
     else:
-        if not OPENAI_KEY:
-            raise Exception("Chưa cài đặt OPENAI_API_KEY trên Render!")
+        if not OPENROUTER_KEY:
+            raise Exception("Chưa cài đặt OPENROUTER_API_KEY trên Render!")
         
-        client = OpenAI(api_key=OPENAI_KEY)
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=OPENROUTER_KEY,
+        )
         response = client.chat.completions.create(
             model=model_name,
             messages=[
@@ -86,28 +89,27 @@ def ask_ai(prompt, model_name):
 # --- 4. SỰ KIỆN BOT ONLINE ---
 @bot.event
 async def on_ready():
-    custom_status = discord.CustomActivity(name="Chat AI (Gemini & ChatGPT) ✨")
+    custom_status = discord.CustomActivity(name="AI Chat (Gemini & OpenRouter Free) ✨")
     await bot.change_presence(activity=custom_status)
     try:
         synced = await bot.tree.sync()
         print(f"✅ Đã sync {len(synced)} lệnh slash command!")
     except Exception as e:
         print(f"⚠️ Lỗi sync command: {e}")
-    print(f"🚀 Bot đã online!")
+    print(f"🚀 Bot đã online thành công!")
 
 # --- 5. SLASH COMMAND CHỌN MODEL AI ---
-@bot.tree.command(name="model", description="Chọn model Gemini hoặc ChatGPT")
+@bot.tree.command(name="model", description="Chọn mô hình Gemini hoặc OpenRouter Free")
 @app_commands.choices(selected_model=[
-    # Gemini Models
+    # Gemini Models (Google AI Studio)
     app_commands.Choice(name="[Gemini] 3.5 Flash-Lite", value="gemini-3.5-flash-lite"),
     app_commands.Choice(name="[Gemini] 3.6 Flash", value="gemini-3.6-flash"),
     
-    # ChatGPT Models
-    app_commands.Choice(name="[ChatGPT] 6 Astra", value="gpt-6-astra"),
-    app_commands.Choice(name="[ChatGPT] 6 Sol", value="gpt-6-sol"),
-    app_commands.Choice(name="[ChatGPT] GPT 5.5", value="gpt-5.5"),
-    app_commands.Choice(name="[ChatGPT] GPT 5.5 Pro", value="gpt-5.5-pro"),
-    app_commands.Choice(name="[ChatGPT] GPT 5.4 Mini", value="gpt-5.4-mini"),
+    # OpenRouter Free Models (Sử dụng đuôi :free để đảm bảo 0đ)
+    app_commands.Choice(name="[OpenRouter] Nemotron 3 Ultra (Free)", value="nvidia/nemotron-3-ultra:free"),
+    app_commands.Choice(name="[OpenRouter] Nemotron 3 Super (Free)", value="nvidia/nemotron-3-super:free"),
+    app_commands.Choice(name="[OpenRouter] Nemotron 3.5 Lightning (Free)", value="nvidia/nemotron-3.5-lightning:free"),
+    app_commands.Choice(name="[OpenRouter] Laguna S 2.1 (Free)", value="poolside/laguna-s-2.1:free"),
 ])
 async def set_model(interaction: discord.Interaction, selected_model: app_commands.Choice[str]):
     user_models[interaction.user.id] = selected_model.value
@@ -116,7 +118,7 @@ async def set_model(interaction: discord.Interaction, selected_model: app_comman
         ephemeral=True
     )
 
-# --- 6. XỬ LÝ CHAT VỚI AI ---
+# --- 6. XỬ LÝ NÓI CHUYỆN VỚI AI ---
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
@@ -129,6 +131,7 @@ async def on_message(message):
             await message.channel.send("Nhập câu hỏi nữa bro!")
             return
 
+        # Mặc định sử dụng Gemini 3.6 Flash
         current_model = user_models.get(message.author.id, "gemini-3.6-flash")
 
         async with message.channel.typing():
