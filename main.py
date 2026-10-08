@@ -7,7 +7,7 @@ from discord.ext import commands
 from google import genai
 from openai import OpenAI
 
-# --- 1. SERVER GIẢ CHO RENDER (GIÚP BOT KHÔNG BỊ SLEEP) ---
+# --- 1. SERVER GIẢ CHO RENDER ---
 class DummyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -48,7 +48,7 @@ SYSTEM_PROMPT = (
 
 # --- 3. HÀM ĐIỀU HƯỚNG GỌI AI ---
 def ask_ai(prompt, model_name):
-    # Nhóm 1: Gọi Trực Tiếp Qua Gemini SDK (Google AI Studio)
+    # Nhóm 1: Gemini (Google AI Studio)
     if model_name.startswith("gemini"):
         last_exception = None
         for key in GEMINI_KEYS:
@@ -67,12 +67,11 @@ def ask_ai(prompt, model_name):
                 last_exception = e
         raise last_exception or Exception("Không có Gemini API Key hợp lệ!")
 
-    # Nhóm 2: Gọi Qua OpenRouter (Định hướng base_url chính xác để tránh lỗi 400)
+    # Nhóm 2: OpenRouter Free Models
     else:
         if not OPENROUTER_KEY:
             raise Exception("Chưa cài đặt OPENROUTER_API_KEY trên Render!")
         
-        # BẮT BUỘC có base_url để OpenAI SDK gửi request sang OpenRouter thay vì server gốc OpenAI
         client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=OPENROUTER_KEY,
@@ -99,16 +98,16 @@ async def on_ready():
         print(f"⚠️ Lỗi sync command: {e}")
     print(f"🚀 Bot đã online thành công!")
 
-# --- 5. SLASH COMMAND CHỌN MODEL AI ---
+# --- 5. SLASH COMMAND CHỌN MODEL AI chuẩn ID 100% ---
 @bot.tree.command(name="model", description="Chọn mô hình Gemini hoặc OpenRouter Free")
 @app_commands.choices(selected_model=[
-    # Gemini Models (Google AI Studio - Free)
+    # Gemini Models (Google AI Studio)
     app_commands.Choice(name="[Gemini] 3.5 Flash-Lite", value="gemini-3.5-flash-lite"),
     app_commands.Choice(name="[Gemini] 3.6 Flash", value="gemini-3.6-flash"),
     
-    # OpenRouter Free Models (Dùng đuôi :free để đảm bảo 0đ)
-    app_commands.Choice(name="[OpenRouter] Nemotron 3 Ultra (Free)", value="nvidia/nemotron-3-ultra:free"),
-    app_commands.Choice(name="[OpenRouter] Nemotron 3 Super (Free)", value="nvidia/nemotron-3-super:free"),
+    # OpenRouter Free Models (ID chính xác theo yêu cầu)
+    app_commands.Choice(name="[OpenRouter] Nemotron 3 Ultra (Free)", value="nvidia/nemotron-3-ultra-550b-a55b:free"),
+    app_commands.Choice(name="[OpenRouter] Nemotron 3 Super (Free)", value="nvidia/nemotron-3-super-120b-a12b:free"),
     app_commands.Choice(name="[OpenRouter] Nemotron 3.5 Lightning (Free)", value="nvidia/nemotron-3.5-lightning:free"),
     app_commands.Choice(name="[OpenRouter] Laguna S 2.1 (Free)", value="poolside/laguna-s-2.1:free"),
 ])
@@ -132,7 +131,6 @@ async def on_message(message):
             await message.channel.send("Nhập câu hỏi nữa bro!")
             return
 
-        # Mặc định sử dụng Gemini 3.6 Flash
         current_model = user_models.get(message.author.id, "gemini-3.6-flash")
 
         async with message.channel.typing():
