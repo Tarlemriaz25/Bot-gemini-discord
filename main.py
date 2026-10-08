@@ -48,7 +48,7 @@ SYSTEM_PROMPT = (
 
 # --- 3. HÀM ĐIỀU HƯỚNG GỌI AI ---
 def ask_ai(prompt, model_name):
-    # Nhóm Gọi Trực Tiếp Qua Gemini SDK (Miễn phí từ Google AI Studio)
+    # Nhóm 1: Gọi Trực Tiếp Qua Gemini SDK (Google AI Studio)
     if model_name.startswith("gemini"):
         last_exception = None
         for key in GEMINI_KEYS:
@@ -67,11 +67,12 @@ def ask_ai(prompt, model_name):
                 last_exception = e
         raise last_exception or Exception("Không có Gemini API Key hợp lệ!")
 
-    # Nhóm Gọi Qua OpenRouter SDK (Sử dụng các model có đuôi :free)
+    # Nhóm 2: Gọi Qua OpenRouter (Định hướng base_url chính xác để tránh lỗi 400)
     else:
         if not OPENROUTER_KEY:
             raise Exception("Chưa cài đặt OPENROUTER_API_KEY trên Render!")
         
+        # BẮT BUỘC có base_url để OpenAI SDK gửi request sang OpenRouter thay vì server gốc OpenAI
         client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=OPENROUTER_KEY,
@@ -101,11 +102,11 @@ async def on_ready():
 # --- 5. SLASH COMMAND CHỌN MODEL AI ---
 @bot.tree.command(name="model", description="Chọn mô hình Gemini hoặc OpenRouter Free")
 @app_commands.choices(selected_model=[
-    # Gemini Models (Google AI Studio)
+    # Gemini Models (Google AI Studio - Free)
     app_commands.Choice(name="[Gemini] 3.5 Flash-Lite", value="gemini-3.5-flash-lite"),
     app_commands.Choice(name="[Gemini] 3.6 Flash", value="gemini-3.6-flash"),
     
-    # OpenRouter Free Models (Sử dụng đuôi :free để đảm bảo 0đ)
+    # OpenRouter Free Models (Dùng đuôi :free để đảm bảo 0đ)
     app_commands.Choice(name="[OpenRouter] Nemotron 3 Ultra (Free)", value="nvidia/nemotron-3-ultra:free"),
     app_commands.Choice(name="[OpenRouter] Nemotron 3 Super (Free)", value="nvidia/nemotron-3-super:free"),
     app_commands.Choice(name="[OpenRouter] Nemotron 3.5 Lightning (Free)", value="nvidia/nemotron-3.5-lightning:free"),
