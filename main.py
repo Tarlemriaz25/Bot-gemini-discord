@@ -43,7 +43,7 @@ user_models = {}
 SYSTEM_PROMPT = (
     "Bạn là một trợ lý AI cá nhân thông minh, am hiểu sâu sắc về công nghệ, phần cứng, lập trình, "
     "và hệ thống Android/Linux. Hãy luôn suy luận cẩn thận, chi tiết, cung cấp giải pháp chính xác "
-    "và hữu ích nhất. Trả lời bằng tiếng Việt thân thiện, tự nhiên, trình bày đẹp mắt bằng Markdown."
+    "và hữu ích nhất. Trả lời bằng tiếng Việt thân thiện, tự nhiên, trình trình bày đẹp mắt bằng Markdown."
 )
 
 # --- 3. HÀM ĐIỀU HƯỚNG GỌI AI ---
@@ -98,18 +98,19 @@ async def on_ready():
         print(f"⚠️ Lỗi sync command: {e}")
     print(f"🚀 Bot đã online thành công!")
 
-# --- 5. SLASH COMMAND CHỌN MODEL AI chuẩn ID 100% ---
+# --- 5. SLASH COMMAND CHỌN MODEL AI ---
 @bot.tree.command(name="model", description="Chọn mô hình Gemini hoặc OpenRouter Free")
 @app_commands.choices(selected_model=[
     # Gemini Models (Google AI Studio)
     app_commands.Choice(name="[Gemini] 3.5 Flash-Lite", value="gemini-3.5-flash-lite"),
     app_commands.Choice(name="[Gemini] 3.6 Flash", value="gemini-3.6-flash"),
     
-    # OpenRouter Free Models (ID chính xác theo yêu cầu)
+    # OpenRouter Free Models
     app_commands.Choice(name="[OpenRouter] Nemotron 3 Ultra (Free)", value="nvidia/nemotron-3-ultra-550b-a55b:free"),
     app_commands.Choice(name="[OpenRouter] Nemotron 3 Super (Free)", value="nvidia/nemotron-3-super-120b-a12b:free"),
     app_commands.Choice(name="[OpenRouter] Nemotron 3.5 Lightning (Free)", value="nvidia/nemotron-3.5-lightning:free"),
     app_commands.Choice(name="[OpenRouter] Laguna S 2.1 (Free)", value="poolside/laguna-s-2.1:free"),
+    app_commands.Choice(name="[OpenRouter] Google Gemma 4 31B (Free)", value="google/gemma-4-31b-it:free"),
 ])
 async def set_model(interaction: discord.Interaction, selected_model: app_commands.Choice[str]):
     user_models[interaction.user.id] = selected_model.value
