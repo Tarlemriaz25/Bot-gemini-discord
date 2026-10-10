@@ -43,13 +43,16 @@ user_models = {}
 SYSTEM_PROMPT = (
     "Bạn là một trợ lý AI cá nhân thông minh, am hiểu sâu sắc về công nghệ, phần cứng, lập trình, "
     "và hệ thống Android/Linux. Hãy luôn suy luận cẩn thận, chi tiết, cung cấp giải pháp chính xác "
-    "và hữu ích nhất. Trả lời bằng tiếng Việt thân thiện, tự nhiên, trình trình bày đẹp mắt bằng Markdown."
+    "và hữu ích nhất. Trả lời bằng tiếng Việt thân thiện, tự nhiên, trình bày đẹp mắt bằng Markdown."
 )
 
 # --- 3. HÀM ĐIỀU HƯỚNG GỌI AI ---
 def ask_ai(prompt, model_name):
-    # Nhóm 1: Gemini (Google AI Studio)
-    if model_name.startswith("gemini"):
+    # Danh sách các model chạy trực tiếp qua Google AI Studio SDK
+    GOOGLE_DIRECT_MODELS = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemma-4-31b-it"]
+
+    # Nhóm 1: Gọi Trực Tiếp Qua Google AI Studio SDK
+    if model_name in GOOGLE_DIRECT_MODELS or model_name.startswith("gemini"):
         last_exception = None
         for key in GEMINI_KEYS:
             try:
@@ -65,9 +68,9 @@ def ask_ai(prompt, model_name):
                 return res.text
             except Exception as e:
                 last_exception = e
-        raise last_exception or Exception("Không có Gemini API Key hợp lệ!")
+        raise last_exception or Exception("Không có Gemini/Google API Key hợp lệ!")
 
-    # Nhóm 2: OpenRouter Free Models
+    # Nhóm 2: Gọi Qua OpenRouter (Nvidia, Poolside,...)
     else:
         if not OPENROUTER_KEY:
             raise Exception("Chưa cài đặt OPENROUTER_API_KEY trên Render!")
@@ -82,14 +85,14 @@ def ask_ai(prompt, model_name):
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7
+            temperature=0.3
         )
         return response.choices[0].message.content
 
 # --- 4. SỰ KIỆN BOT ONLINE ---
 @bot.event
 async def on_ready():
-    custom_status = discord.CustomActivity(name="AI Chat (Gemini & OpenRouter Free) ✨")
+    custom_status = discord.CustomActivity(name="AI Chat (Google AI Studio & OpenRouter) ✨")
     await bot.change_presence(activity=custom_status)
     try:
         synced = await bot.tree.sync()
@@ -99,18 +102,18 @@ async def on_ready():
     print(f"🚀 Bot đã online thành công!")
 
 # --- 5. SLASH COMMAND CHỌN MODEL AI ---
-@bot.tree.command(name="model", description="Chọn mô hình Gemini hoặc OpenRouter Free")
+@bot.tree.command(name="model", description="Chọn mô hình AI Chat")
 @app_commands.choices(selected_model=[
-    # Gemini Models (Google AI Studio)
-    app_commands.Choice(name="[Gemini] 3.5 Flash-Lite", value="gemini-3.5-flash-lite"),
-    app_commands.Choice(name="[Gemini] 3.6 Flash", value="gemini-3.6-flash"),
+    # Google AI Studio (Dùng Key Google chính chủ)
+    app_commands.Choice(name="[Google] Gemini 3.5 Flash-Lite", value="gemini-3.5-flash-lite"),
+    app_commands.Choice(name="[Google] Gemini 3.6 Flash", value="gemini-3.6-flash"),
+    app_commands.Choice(name="[Google] Gemma 4 31B", value="gemma-4-31b-it"),
     
     # OpenRouter Free Models
     app_commands.Choice(name="[OpenRouter] Nemotron 3 Ultra (Free)", value="nvidia/nemotron-3-ultra-550b-a55b:free"),
     app_commands.Choice(name="[OpenRouter] Nemotron 3 Super (Free)", value="nvidia/nemotron-3-super-120b-a12b:free"),
     app_commands.Choice(name="[OpenRouter] Nemotron 3.5 Lightning (Free)", value="nvidia/nemotron-3.5-lightning:free"),
     app_commands.Choice(name="[OpenRouter] Laguna S 2.1 (Free)", value="poolside/laguna-s-2.1:free"),
-    app_commands.Choice(name="[OpenRouter] Google Gemma 4 31B (Free)", value="google/gemma-4-31b-it:free"),
 ])
 async def set_model(interaction: discord.Interaction, selected_model: app_commands.Choice[str]):
     user_models[interaction.user.id] = selected_model.value
