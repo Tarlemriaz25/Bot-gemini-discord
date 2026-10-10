@@ -42,7 +42,7 @@ user_models = {}
 
 SYSTEM_PROMPT = (
     "Bạn là một trợ lý AI cá nhân thông minh, am hiểu sâu sắc về công nghệ, phần cứng, lập trình, "
-    "và hệ thống Android/Linux. Hãy luôn suy luận cẩn thận, chi tiết, cung cấp giải pháp chính xác "
+    "và hệ thống lập trình. Hãy luôn suy luận cẩn thận, chi tiết, cung cấp giải pháp chính xác "
     "và hữu ích nhất. Trả lời bằng tiếng Việt thân thiện, tự nhiên, trình bày đẹp mắt bằng Markdown."
 )
 
