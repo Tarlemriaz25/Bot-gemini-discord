@@ -62,7 +62,7 @@ def ask_ai(prompt, model_name):
                     contents=prompt,
                     config=genai.types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT,
-                        temperature=0.7
+                        temperature=0.3
                     )
                 )
                 return res.text
@@ -106,7 +106,7 @@ async def on_ready():
 @app_commands.choices(selected_model=[
     # Google AI Studio (Dùng Key Google chính chủ)
     app_commands.Choice(name="[Google] Gemini 3.5 Flash-Lite", value="gemini-3.5-flash-lite"),
-    app_commands.Choice(name="[Google] Gemini 3.6 Flash", value="gemini-3.6-flash"),
+    app_commands.Choice(name="[Google] Gemini 3.8 Flash", value="gemini-3.8-flash"),
     app_commands.Choice(name="[Google] Gemma 4 31B", value="gemma-4-31b-it"),
     
     # OpenRouter Free Models
