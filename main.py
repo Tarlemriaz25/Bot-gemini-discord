@@ -49,7 +49,7 @@ SYSTEM_PROMPT = (
 # --- 3. HÀM ĐIỀU HƯỚNG GỌI AI ---
 def ask_ai(prompt, model_name):
     # Danh sách các model chạy trực tiếp qua Google AI Studio SDK
-    GOOGLE_DIRECT_MODELS = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemma-4-31b-it"]
+    GOOGLE_DIRECT_MODELS = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemma-4-31b-it"]
 
     # Nhóm 1: Gọi Trực Tiếp Qua Google AI Studio SDK
     if model_name in GOOGLE_DIRECT_MODELS or model_name.startswith("gemini"):
