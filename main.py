@@ -111,7 +111,7 @@ async def on_ready():
     
     # OpenRouter Free Models
     app_commands.Choice(name="[OpenRouter] Nemotron 3 Ultra (Free)", value="nvidia/nemotron-3-ultra-550b-a55b:free"),
-    app_commands.Choice(name="[OpenRouter] Nemotron 3 Super (Free)", value="nvidia/nemotron-3-super-120b-a12b:free"),
+    app_commands.Choice(name="[OpenRouter] Nemotron 3.5 Super VL (Free)", value="nvidia/nemotron-3.5-super-vl:free"),
     app_commands.Choice(name="[OpenRouter] Nemotron 3.5 Lightning (Free)", value="nvidia/nemotron-3.5-lightning:free"),
     app_commands.Choice(name="[OpenRouter] Laguna S 2.1 (Free)", value="poolside/laguna-s-2.1:free"),
 ])
